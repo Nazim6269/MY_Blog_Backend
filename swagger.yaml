@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  version: "1"
+  title: "My Blog API"
+  description: "This is first professional api where user can able to register, create which are visible to publicly."
+  contact:
+    name: "Blog Api"
+    url: htttp://blog.com
+    email: support@gmail.com
+
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/devtech-601/by-blog/1
+  - description: Dev
+    url: http://localhost:4000/api/v1
+
+tags:
+  - name: Auth
+    description: Authentication endpoint
+  - name: Article
+    description: Article  endpoint (public + private)
+  - name: Comment
+    description: Comment endpoint
+  - name: User
+    description: User endpoint (admin only)
+paths:
+  "/auth/signup":
+    post:
+      description: create new account
+      tags: [Auth]
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Nazim Uddin
+                email:
+                  type: string
+                  format: email
+                  example: user@gmail.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+              required: [name, email, password]
+
+      responses:
+        "201":
+          description: Signup successfull
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                    example: 201
+                  message:
+                    type: string
+                    example: signup successfull
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        example: lkjlkjekk3j4k35kjfkj304y
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: string
+                        example: "auth/signup"
+                      signin:
+                        type: string
+                        example: "auth/signin"
