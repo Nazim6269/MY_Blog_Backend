@@ -6,7 +6,7 @@ const YAML = require("yamljs");
 const swaggerDoc = YAML.load("./swagger.yaml");
 const connection = require("../db");
 
-import { Article } from "../interface";
+import { Article, DataResponse } from "../interface";
 
 const app = express();
 const PORT = process.env.PORT ?? 4000;
@@ -22,9 +22,8 @@ app.get("/api/v1/articles", async (req: Request, res: Response) => {
   const page = +req.query.page || 1;
   const limit = +req.query.limit || 10;
   const sortType = req.query.sort_type || "asc";
-  const sortBy = req.query.sort_by || "updatedat";
+  const sortBy = (req.query.sort_by as keyof Article) || "updatedAt";
   const searchTerm = req.query.search || "";
-  console.log(req.query);
 
   const searchString: string | null =
     typeof searchTerm === "string"
@@ -36,13 +35,28 @@ app.get("/api/v1/articles", async (req: Request, res: Response) => {
   const db = await connection.getDB();
   let articles = db.articles;
 
+  //search article
   if (searchTerm) {
     articles = articles.filter((article: Article) =>
       article.title.toLowerCase().includes(searchString)
     );
   }
 
-  const transformedArticles = articles.map((article: Article) => {
+  // sort article
+  articles.sort((a: Article, b: Article) => {
+    if (sortType === "asc")
+      return a[sortBy].toString().localeCompare(b[sortBy].toString());
+    if (sortType === "dsc")
+      return b[sortBy].toString().localeCompare(a[sortBy].toString());
+  });
+
+  //pagination
+  const skip = page * limit - limit;
+  let resultedArticles = articles.slice(skip, skip + limit);
+  const totalItems = articles.length;
+  const totalPage = Math.ceil(articles.length / page);
+
+  resultedArticles = resultedArticles.map((article: Article) => {
     const transformed = { ...article };
 
     transformed.author = { id: transformed.authorId };
@@ -54,22 +68,28 @@ app.get("/api/v1/articles", async (req: Request, res: Response) => {
     return transformed;
   });
 
-  const response = {
-    data: transformedArticles,
+  const response: DataResponse = {
+    data: resultedArticles,
     pagination: {
       page,
       limit,
-      next: 3,
-      prev: 1,
-      totalPages: Math.ceil(articles.length / page),
-      totalItems: articles.length,
+      totalPage,
+      totalItems,
     },
     links: {
       self: req.url,
-      next: `/articles/page=${page + 1}&limit=${limit}`,
-      prev: `/articles/page=${page - 1}&limit=${limit}`,
     },
   };
+
+  if (page > 1) {
+    response.pagination.prev = page - 1;
+    response.links.prev = `/articles/page=${page - 1}&limit=${limit}`;
+  }
+
+  if (page < totalPage) {
+    response.pagination.next = page + 1;
+    response.links.next = `/articles/page=${page + 1}&limit=${limit}`;
+  }
 
   res.status(201).json(response);
 });
