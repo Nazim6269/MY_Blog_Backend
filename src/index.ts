@@ -81,7 +81,7 @@ app.get("/api/v1/articles", async (req: Request, res: Response) => {
     },
   };
 
-  if (page > 1) {
+  if (page > totalPage) {
     response.pagination.prev = page - 1;
     response.links.prev = `/articles/page=${page - 1}&limit=${limit}`;
   }

@@ -1,3 +1,7 @@
+export interface Author {
+  id: number;
+}
+
 export interface Article {
   title: string;
   id: number;
@@ -6,9 +10,8 @@ export interface Article {
   authorId: number;
   createdAt: string;
   updatedAt: string;
-  author: {
-    id: number;
-  };
+  [key: string]: string | number | Author;
+  author: Author;
 }
 
 export interface DataResponse {
