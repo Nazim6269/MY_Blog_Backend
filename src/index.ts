@@ -4,9 +4,10 @@ const express = require("express");
 const swaggerUI = require("swagger-ui-express");
 const YAML = require("yamljs");
 const swaggerDoc = YAML.load("./swagger.yaml");
-const connection = require("../db");
+const article = require("./services/article");
+// const connection = require("../db");
 
-import { Article, DataResponse } from "../interface";
+import { DataResponse } from "../interface";
 
 const app = express();
 const PORT = process.env.PORT ?? 4000;
@@ -21,55 +22,12 @@ app.get("/health", (_req: Request, res: Response) => {
 app.get("/api/v1/articles", async (req: Request, res: Response) => {
   const page = +req.query.page || 1;
   const limit = +req.query.limit || 10;
-  const sortType = req.query.sort_type || "asc";
-  const sortBy = (req.query.sort_by as keyof Article) || "updatedAt";
-  const searchTerm = req.query.search || "";
 
-  const searchString: string | null =
-    typeof searchTerm === "string"
-      ? searchTerm
-      : Array.isArray(searchTerm)
-      ? searchTerm.find((item) => typeof item === "string") ?? null
-      : null;
-
-  const db = await connection.getDB();
-  let articles = db.articles;
-
-  //search article
-  if (searchTerm) {
-    articles = articles.filter((article: Article) =>
-      article.title.toLowerCase().includes(searchString)
-    );
-  }
-
-  // sort article
-  articles.sort((a: Article, b: Article) => {
-    if (sortType === "asc")
-      return a[sortBy].toString().localeCompare(b[sortBy].toString());
-    if (sortType === "dsc")
-      return b[sortBy].toString().localeCompare(a[sortBy].toString());
-  });
-
-  //pagination
-  const skip = page * limit - limit;
-  let resultedArticles = articles.slice(skip, skip + limit);
-  const totalItems = articles.length;
-  const totalPage = Math.ceil(articles.length / page);
-
-  resultedArticles = resultedArticles.map((article: Article) => {
-    const transformed = { ...article };
-
-    transformed.author = { id: transformed.authorId };
-    transformed.link = `/articles/${transformed.id}`;
-
-    delete transformed.body;
-    delete transformed.authorId;
-
-    return transformed;
-  });
+  let { totalItems, totalPage, hasNext, hasPrev, articles } =
+    await article.articlesService({ ...req.query, page, limit });
 
   const response: DataResponse = {
-    data: resultedArticles,
+    data: article.transformedArticles({ articles }),
     pagination: {
       page,
       limit,
@@ -81,12 +39,12 @@ app.get("/api/v1/articles", async (req: Request, res: Response) => {
     },
   };
 
-  if (page > totalPage) {
+  if (hasPrev) {
     response.pagination.prev = page - 1;
     response.links.prev = `/articles/page=${page - 1}&limit=${limit}`;
   }
 
-  if (page < totalPage) {
+  if (hasNext) {
     response.pagination.next = page + 1;
     response.links.next = `/articles/page=${page + 1}&limit=${limit}`;
   }

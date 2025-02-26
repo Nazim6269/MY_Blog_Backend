@@ -13,6 +13,7 @@ class DBConnection {
   async read() {
     try {
       const dbString = await fs.readFile(this.dbURL, { encoding: "utf-8" });
+
       this.db = JSON.parse(dbString);
     } catch (error) {
       console.error("Failed to read from database file:", error.message);
