@@ -10,7 +10,7 @@ class DBConnection {
     this.dbURL = dbUrl;
   }
 
-  async read() {
+  async connect() {
     try {
       const dbString = await fs.readFile(this.dbURL, { encoding: "utf-8" });
 
@@ -31,16 +31,9 @@ class DBConnection {
       throw error;
     }
   }
-
-  async getDB() {
-    if (!this.db) {
-      await this.read();
-    }
-    return this.db;
-  }
 }
 
 const dbUrl = process.env.DB_URL;
-const connection = new DBConnection(path.resolve(dbUrl || ""));
+const dbConnection = new DBConnection(path.resolve(dbUrl || ""));
 
-module.exports = connection;
+module.exports = dbConnection;

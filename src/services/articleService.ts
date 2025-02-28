@@ -1,6 +1,6 @@
-import { Article } from "../../interface";
-
-const ArticleClass = require("../models/Article");
+import { Article, NewArticle } from "../../interface";
+const ArticleClass = require("../models/ArticleModel");
+const dbConnection = require("../../db");
 
 const articlesService = async ({
   page = 1,
@@ -16,9 +16,7 @@ const articlesService = async ({
   //       ? searchTerm.find((item: any) => typeof item === "string") ?? null
   //       : null;
 
-  const articleInstance = new ArticleClass();
-
-  await articleInstance.init();
+  const articleInstance = new ArticleClass(dbConnection.db.articles);
 
   let articles;
 
@@ -30,6 +28,7 @@ const articlesService = async ({
   }
 
   // sort article
+  articles = [...articles];
   articles = await articleInstance.sort(articles, sortType, sortBy);
 
   //pagination
@@ -59,4 +58,20 @@ const transformedArticles = ({ articles = [] }: { articles: Article[] }) => {
   });
 };
 
-module.exports = { articlesService, transformedArticles };
+const createNewArticle = ({
+  title,
+  body,
+  cover = "",
+  status = "draft",
+  authorId,
+}: NewArticle) => {
+  const articleInstance = new ArticleClass(dbConnection.db.articles);
+  const article = articleInstance.create(
+    { title, body, cover, authorId, status },
+    dbConnection
+  );
+
+  return article;
+};
+
+module.exports = { articlesService, transformedArticles, createNewArticle };

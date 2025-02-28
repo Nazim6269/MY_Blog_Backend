@@ -1,17 +1,9 @@
 import { Article } from "../../interface";
 
-const connection = require("../../db");
-
 class ArticleClass {
   private articles: Article[] = [];
-  constructor() {
-    // this.init();
-  }
-
-  //=========== this funciton will init db connection===========//
-  async init(): Promise<void> {
-    const db = await connection.getDB();
-    this.articles = db.articles;
+  constructor(articles: Article[]) {
+    this.articles = articles;
   }
 
   //=========== this function will find all articles ========//
@@ -79,6 +71,17 @@ class ArticleClass {
     return articles.sort((a, b) =>
       b[sortBy].toString().localeCompare(a[sortBy].toString())
     );
+  }
+
+  async create(article: Article, dbConnection: any) {
+    article.id = this.articles[this.articles.length - 1].id + 1;
+    article.updatedAt = new Date().toISOString();
+    article.createdAt = new Date().toISOString();
+    this.articles.push(article);
+
+    dbConnection.db.articles = this.articles;
+    console.log(dbConnection.db.articles);
+    return article;
   }
 }
 

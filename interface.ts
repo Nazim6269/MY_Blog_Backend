@@ -30,3 +30,11 @@ export interface DataResponse {
     prev?: string;
   };
 }
+
+export interface NewArticle {
+  title: string;
+  body: string;
+  cover?: string;
+  status?: string;
+  authorId?: number;
+}
